@@ -5,10 +5,15 @@ var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
-var messages = [
-    {name: 'Oni', message: 'Hi'},
-    {name: 'Oye', message: 'Hello'}
-]
+var Message = mongoose.model('Message',{
+    name: String,
+    message: String
+})
+
+// var messages = [
+//     {name: 'Oni', message: 'Hi'},
+//     {name: 'Oye', message: 'Hello'}
+// ]
 
 app.use(express.static(__dirname));
 app.use(bodyParser.json());
@@ -17,13 +22,23 @@ app.use(bodyParser.urlencoded({extended: false}));
 var dburl = 'mongodb+srv://user:tQLVD3ziqYJGCdB@cluster0.upvla.mongodb.net/chatApp'
 
 app.get('/messages', (req, res) => {
-    res.send(messages);
+    Message.find({}, (err, messages)=>{
+        res.send(messages);
+    })
+   
 })
 app.post('/messages', (req, res) => {
     console.log(req.body);
-    messages.push(req.body);
-    io.emit('message', req.body);
-    res.sendStatus(200);
+    var message =  new Message(req.body);
+
+    message.save((err) =>{
+        if(err)
+            sendStatus(500);
+
+        // messages.push(req.body);
+        io.emit('message', req.body);
+        res.sendStatus(200);
+    });
 })
 io.on('connection', (socket) =>{
     console.log('a user connected');
